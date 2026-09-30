@@ -319,7 +319,7 @@ struct AppearanceSettingsPane: View {
 
         HStack(spacing: 12) {
             centerLabelCard(.agentAction, sample: "Claude · editing")
-            centerLabelCard(.sessionName,  sample: "open-island")
+            centerLabelCard(.sessionName,  sample: "agent-island")
             centerLabelCard(.off,          sample: "—")
         }
     }
@@ -642,7 +642,7 @@ struct AppearanceSettingsPane: View {
         case (.idle, _):               return nil
         case (.waiting, _):            return lang.t("settings.appearance.preview.permissionNeeded")
         case (.running, .agentAction): return lang.t("settings.appearance.preview.agentEditing")
-        case (.running, .sessionName): return "open-island"
+        case (.running, .sessionName): return "agent-island"
         case (.running, .off):         return nil
         }
     }
@@ -689,7 +689,7 @@ struct AppearanceSettingsPane: View {
                 return AppearanceSessionPreviewSection(id: agent, title: agent, items: groupItems)
             }
         case .project:
-            let groups = ["open-island", "website", "docs"]
+            let groups = ["agent-island", "website", "docs"]
             return groups.compactMap { project in
                 let groupItems = items.filter { $0.project == project }
                 guard !groupItems.isEmpty else { return nil }
@@ -716,12 +716,12 @@ struct AppearanceSettingsPane: View {
         [
             .init(
                 id: "approval",
-                title: "Codex · open-island",
+                title: "Codex · agent-island",
                 detail: lang.t("settings.appearance.preview.approveShellCommand"),
                 agent: "Codex",
                 agentShort: "codex",
                 agentColor: Color(hex: AgentTool.codex.brandColorHex) ?? Color(red: 0.55, green: 0.72, blue: 1.0),
-                project: "open-island",
+                project: "agent-island",
                 branch: "v8-design",
                 prompt: lang.t("settings.appearance.preview.promptImplementPlan"),
                 terminal: "Ghostty",
@@ -732,12 +732,12 @@ struct AppearanceSettingsPane: View {
             ),
             .init(
                 id: "answer",
-                title: "Claude · open-island",
+                title: "Claude · agent-island",
                 detail: lang.t("settings.appearance.preview.waitingForAnswer"),
                 agent: "Claude",
                 agentShort: "claude",
                 agentColor: Color(hex: AgentTool.claudeCode.brandColorHex) ?? Color(red: 0.9, green: 0.55, blue: 0.34),
-                project: "open-island",
+                project: "agent-island",
                 branch: "main",
                 prompt: lang.t("settings.appearance.preview.promptChooseNotificationCopy"),
                 terminal: "Ghostty",
@@ -780,12 +780,12 @@ struct AppearanceSettingsPane: View {
             ),
             .init(
                 id: "idle",
-                title: "Codex · open-island",
+                title: "Codex · agent-island",
                 detail: lang.t("settings.appearance.preview.completedEarlier"),
                 agent: "Codex",
                 agentShort: "codex",
                 agentColor: Color(hex: AgentTool.codex.brandColorHex) ?? Color(red: 0.55, green: 0.72, blue: 1.0),
-                project: "open-island",
+                project: "agent-island",
                 branch: nil,
                 prompt: nil,
                 terminal: "Ghostty",
