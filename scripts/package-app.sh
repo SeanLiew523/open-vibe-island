@@ -18,6 +18,10 @@ zip_path="${OPEN_ISLAND_ZIP_PATH:-$package_root/$app_name.zip}"
 dmg_path="${OPEN_ISLAND_DMG_PATH:-$package_root/$app_name.dmg}"
 signing_identity="${OPEN_ISLAND_SIGN_IDENTITY:-}"
 notary_profile="${OPEN_ISLAND_NOTARY_PROFILE:-}"
+signing_runtime_args=(--options runtime --timestamp)
+if [[ "${OPEN_ISLAND_HARDENED_SIGNING:-true}" != "true" ]]; then
+    signing_runtime_args=()
+fi
 
 brand_script="$repo_root/scripts/generate_brand_icons.py"
 dmg_bg_script="$repo_root/scripts/generate_dmg_background.py"
@@ -119,7 +123,7 @@ cat > "$bundle_dir/Contents/Info.plist" <<EOF
     <key>LSMinimumSystemVersion</key>
     <string>14.0</string>
     <key>NSAppleEventsUsageDescription</key>
-    <string>Open Island needs automation access to focus Terminal and iTerm sessions for jump-back.</string>
+    <string>$app_name needs automation access to focus Terminal and iTerm sessions for jump-back.</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSPrincipalClass</key>
@@ -131,6 +135,12 @@ cat > "$bundle_dir/Contents/Info.plist" <<EOF
 </dict>
 </plist>
 EOF
+
+if [[ "${OPEN_ISLAND_DISABLE_UPDATES:-false}" == "true" ]]; then
+    /usr/libexec/PlistBuddy -c "Delete :SUFeedURL" "$bundle_dir/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c "Delete :SUPublicEDKey" "$bundle_dir/Contents/Info.plist"
+    /usr/libexec/PlistBuddy -c "Add :OpenIslandDisableUpdates bool true" "$bundle_dir/Contents/Info.plist"
+fi
 
 plutil -lint "$bundle_dir/Contents/Info.plist" >/dev/null
 
@@ -191,24 +201,23 @@ if [[ -n "$signing_identity" ]]; then
 
     if [[ -d "$sparkle_fw" ]]; then
         for xpc in "$sparkle_fw"/Versions/B/XPCServices/*.xpc; do
-            [[ -d "$xpc" ]] && codesign --force --options runtime --timestamp --sign "$signing_identity" "$xpc"
+            [[ -d "$xpc" ]] && codesign --force "${signing_runtime_args[@]}" --sign "$signing_identity" "$xpc"
         done
         [[ -f "$sparkle_fw/Versions/B/Autoupdate" ]] && \
-            codesign --force --options runtime --timestamp --sign "$signing_identity" "$sparkle_fw/Versions/B/Autoupdate"
+            codesign --force "${signing_runtime_args[@]}" --sign "$signing_identity" "$sparkle_fw/Versions/B/Autoupdate"
         [[ -d "$sparkle_fw/Versions/B/Updater.app" ]] && \
-            codesign --force --options runtime --timestamp --sign "$signing_identity" "$sparkle_fw/Versions/B/Updater.app"
-        codesign --force --options runtime --timestamp --sign "$signing_identity" "$sparkle_fw"
+            codesign --force "${signing_runtime_args[@]}" --sign "$signing_identity" "$sparkle_fw/Versions/B/Updater.app"
+        codesign --force "${signing_runtime_args[@]}" --sign "$signing_identity" "$sparkle_fw"
     fi
 
-    codesign --force --options runtime --timestamp --sign "$signing_identity" \
+    codesign --force "${signing_runtime_args[@]}" --sign "$signing_identity" \
         "$bundle_dir/Contents/Helpers/OpenIslandHooks"
-    codesign --force --options runtime --timestamp --sign "$signing_identity" \
+    codesign --force "${signing_runtime_args[@]}" --sign "$signing_identity" \
         "$bundle_dir/Contents/Helpers/OpenIslandSetup"
 
     codesign \
         --force \
-        --options runtime \
-        --timestamp \
+        "${signing_runtime_args[@]}" \
         --entitlements "$entitlements_path" \
         --sign "$signing_identity" \
         "$bundle_dir"
@@ -239,6 +248,10 @@ fi
 
 # --- Styled DMG creation ---
 dmg_bg="$repo_root/Assets/Brand/dmg-background@2x.png"
+dmg_environment_args=()
+if [[ "${OPEN_ISLAND_DMG_SKIP_FINDER:-false}" == "true" ]]; then
+    dmg_environment_args+=(--skip-jenkins)
+fi
 
 create-dmg \
     --volname "$app_name" \
@@ -251,6 +264,7 @@ create-dmg \
     --hide-extension "$app_name.app" \
     --app-drop-link 480 210 \
     --no-internet-enable \
+    "${dmg_environment_args[@]}" \
     "$dmg_path" \
     "$bundle_dir"
 
@@ -259,7 +273,7 @@ if [[ -n "$signing_identity" ]]; then
     codesign \
         --force \
         --sign "$signing_identity" \
-        --timestamp \
+        "${signing_runtime_args[@]}" \
         "$dmg_path"
 fi
 

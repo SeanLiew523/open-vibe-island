@@ -22,6 +22,10 @@ final class UpdateChecker: NSObject {
     @ObservationIgnored
     private var cancellable: AnyCancellable?
 
+    private var updatesDisabledByBundle: Bool {
+        Bundle.main.object(forInfoDictionaryKey: "OpenIslandDisableUpdates") as? Bool == true
+    }
+
     override init() {
         super.init()
         updaterController = SPUStandardUpdaterController(
@@ -34,6 +38,11 @@ final class UpdateChecker: NSObject {
     /// Start Sparkle's automatic update checking schedule.
     /// Call once after app launch.
     func startIfNeeded() {
+        guard !updatesDisabledByBundle else {
+            print("[UpdateChecker] disabled by bundle configuration")
+            return
+        }
+
         #if DEBUG
         // Dev builds run from a local branch that often carries fixes not yet in
         // the upstream appcast. Letting Sparkle prompt the user to "update" to
@@ -63,6 +72,7 @@ final class UpdateChecker: NSObject {
 
     /// Manually trigger an update check (from Settings UI).
     func checkForUpdates() {
+        guard !updatesDisabledByBundle else { return }
         updaterController.checkForUpdates(nil)
     }
 }
